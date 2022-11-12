@@ -1,0 +1,12 @@
+version: '3.7'
+
+services:
+  front:
+    image: node:19.0-bullseye-slim
+    user: node
+    ports:
+      - 62080:3000
+    volumes:
+      - ./:/project
+    working_dir: /project/front
+    command: [npm, run, dev]
