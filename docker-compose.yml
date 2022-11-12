@@ -1,13 +1,26 @@
 version: '3.7'
 
 services:
+  catalog:
+    image: node:19.0-bullseye-slim
+    user: node
+    ports:
+      - 6006:6006 # Storybook
+    volumes:
+      - ./:/project:delegated
+    working_dir: /project/front
+    command: [ npm, run, storybook ]
+    environment:
+      NODE_OPTIONS: --openssl-legacy-provider
   front:
     image: node:19.0-bullseye-slim
     user: node
     ports:
-      - 62080:3000
-      - 24678:24678
+      - 62080:3000 # Nuxt - Web
+      - 24678:24678 # Nuxt - HMR
     volumes:
-      - ./:/project
+      - ./:/project:delegated
     working_dir: /project/front
-    command: [ npm, run, dev ]
+    command: [ npm, run, nuxt:dev ]
+    environment:
+      NODE_OPTIONS: --openssl-legacy-provider
