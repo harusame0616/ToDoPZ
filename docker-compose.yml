@@ -6,7 +6,8 @@ services:
     user: node
     ports:
       - 62080:3000
+      - 24678:24678
     volumes:
       - ./:/project
     working_dir: /project/front
-    command: [npm, run, dev]
+    command: [ npm, run, dev ]
