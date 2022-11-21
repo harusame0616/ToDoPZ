@@ -1,7 +1,10 @@
+const Components = require('unplugin-vue-components/vite');
+const AutoImport = require('unplugin-auto-import/vite');
+
 module.exports = {
   stories: [
     '../stories/**/*.stories.mdx',
-    '../**/components/*.stories.@(js|jsx|ts|tsx)',
+    '../components/**/*.stories.@(js|jsx|ts|tsx)',
   ],
   addons: [
     '@storybook/addon-links',
@@ -22,5 +25,21 @@ module.exports = {
   },
   features: {
     storyStoreV7: true,
+  },
+  viteFinal: (config) => {
+    config.plugins = [
+      ...config.plugins,
+      AutoImport({
+        include: [/\.vue$/, /\.vue\?vue/, /\.[tj]sx?$/],
+        imports: ['vue'],
+        dts: true,
+        dirs: ['./components/**'],
+      }),
+      Components({
+        dts: true,
+        dirs: ['./components/**'],
+      }),
+    ];
+    return config;
   },
 };
