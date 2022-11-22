@@ -31,6 +31,7 @@
     "vue-loader": "^16.8.3"
   },
   "dependencies": {
-    "@storybook/addon-postcss": "^2.0.0"
+    "@storybook/addon-postcss": "^2.0.0",
+    "vite-tsconfig-paths": "^3.6.0"
   }
 }
