@@ -1,7 +1,13 @@
-const Components = require('unplugin-vue-components/vite');
-const AutoImport = require('unplugin-auto-import/vite');
+import Components from 'unplugin-vue-components/vite';
+import AutoImport from 'unplugin-auto-import/vite';
+import TsconfigPaths from 'vite-tsconfig-paths';
+import { StorybookConfig } from '@storybook/core-common';
 
-module.exports = {
+type StorybookConfigWithVite = StorybookConfig & {
+  viteFinal: any;
+};
+
+const config: StorybookConfigWithVite = {
   stories: [
     '../stories/**/*.stories.mdx',
     '../components/**/*.stories.@(js|jsx|ts|tsx)',
@@ -39,7 +45,10 @@ module.exports = {
         dts: true,
         dirs: ['./components/**'],
       }),
+      TsconfigPaths(),
     ];
     return config;
   },
 };
+
+export default config;
