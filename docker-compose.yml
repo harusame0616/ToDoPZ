@@ -1,5 +1,8 @@
 version: '3.7'
 
+volumes:
+  todo-service_node-volume:
+
 services:
   catalog:
     image: node:19.0-bullseye-slim
@@ -24,3 +27,15 @@ services:
     command: [ npm, run, nuxt:dev ]
     environment:
       NODE_OPTIONS: --openssl-legacy-provider
+
+  todo-service:
+    image: node:19.0-bullseye-slim
+    user: node
+    ports:
+      - 62083:3000 # Nuxt - Web
+    volumes:
+      - ./:/project:delegated
+      - todo-service_node-volume:/project/todo-service/node_modules
+    working_dir: /project/todo-service
+    command: [ npm, start ]
+    tty: true
