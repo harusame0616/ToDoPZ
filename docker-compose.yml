@@ -3,6 +3,7 @@ version: '3.7'
 volumes:
   todo-service_node-volume:
 
+
 services:
   catalog:
     image: node:19.0-bullseye-slim
@@ -15,6 +16,7 @@ services:
     command: [ npm, run, storybook ]
     environment:
       NODE_OPTIONS: --openssl-legacy-provider
+      VITE_API: MOCK
   front:
     image: node:19.0-bullseye-slim
     user: node
@@ -25,9 +27,6 @@ services:
       - ./:/project:delegated
     working_dir: /project/front
     command: [ npm, run, nuxt:dev ]
-    environment:
-      NODE_OPTIONS: --openssl-legacy-provider
-
   todo-service:
     build:
       context: ./todo-service

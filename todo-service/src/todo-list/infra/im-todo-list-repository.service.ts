@@ -4,11 +4,19 @@ import { TodoListRepository } from '../application/todo-list-repository.interfac
 
 @Injectable()
 export class IMTodoListRepository implements TodoListRepository {
-  private todoListDataStore: { [key: string]: TodoList } = {};
+  public todoListDataStore: { [key: string]: TodoList } = {};
   async findOneByName(name: string): Promise<TodoList | null> {
     return (
       Object.values(this.todoListDataStore).find(
-        (todoList) => todoList.name === name,
+        (todoList) => todoList.name === name
+      ) ?? null
+    );
+  }
+
+  async findOneById(id: string): Promise<TodoList | null> {
+    return (
+      Object.values(this.todoListDataStore).find(
+        (todoList) => todoList.id === id
       ) ?? null
     );
   }

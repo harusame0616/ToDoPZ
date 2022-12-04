@@ -1,4 +1,9 @@
-type NewTodo = {
+import { Ref } from 'nuxt/dist/app/compat/capi';
+import { FetchTodoListGateway } from '~~/gateways/todo-list/fetch-todo-list';
+import { MockTodoListGateway } from '~~/gateways/todo-list/mock-todo-list';
+
+type Todo = {
+  todoId: string;
   title: string;
   note: string;
   deadline?: Date;
@@ -7,37 +12,56 @@ type NewTodo = {
   finishedAt?: Date;
 };
 
-type Todo = NewTodo & {
-  todoId: string;
-};
-
-type NewTodoList = {
-  todos: (Todo | NewTodo)[];
-};
-
-type TodoList = NewTodoList & {
+type TodoList = {
   todoListId: string;
+  name: string;
+  todos: Todo[];
 };
 
-export const useTodoList = (
-  todoList: TodoList | NewTodoList = { todos: [] }
-) => {
-  const _todoList = ref(todoList);
+export type CreateTodoParam = {
+  title: string;
+  note: string;
+};
 
-  const createNewTodo = () => {
-    _todoList.value.todos.push({ title: '', note: '' });
+export interface TodoListGateway {
+  create(todoIdList: string, createTodoParam: CreateTodoParam): Promise<string>;
+  finish(todoListId: string, todoId: string): Promise<Date>;
+  resume(todoListId: string, todoId: string): Promise<void>;
+  changeTitle(todoListId: string, todoId: string, title: string): Promise<void>;
+  changeNote(todoListId: string, todoId: string, ntoe: string): Promise<void>;
+}
+
+const todoListGateway =
+  import.meta.env.VITE_API === 'MOCK'
+    ? new MockTodoListGateway()
+    : new FetchTodoListGateway();
+
+export const useTodoList = () => {
+  const _todoList: Ref<TodoList> = ref({ todoListId: '', name: '', todos: [] });
+  const isLoading = ref(false);
+
+  const createNewTodo = async () => {
+    const newTodoId = await todoListGateway.create(_todoList.value.todoListId);
+
+    const newTodo = { todoId: newTodoId, title: '', note: '' };
+    _todoList.value.todos.push(newTodo);
   };
 
   const deleteTodo = (index: number) => {
     _todoList.value.todos.splice(index, 1);
   };
 
-  const finish = (index: number) => {
-    if (_todoList.value.todos[index] == null) {
+  const finish = async (index: number) => {
+    const finishingTodo = _todoList.value.todos[index];
+    if (finishingTodo == null) {
       throw new Error('index error');
     }
 
-    _todoList.value.todos[index].finishedAt = new Date();
+    const finishedTime = await todoListGateway.finish(
+      _todoList.value.todoListId,
+      finishingTodo.todoId
+    );
+    finishingTodo.finishedAt = finishedTime;
   };
 
   const isFinished = (index: number) => {
@@ -48,18 +72,31 @@ export const useTodoList = (
     return !!_todoList.value.todos[index].finishedAt;
   };
 
-  const resume = (index: number) => {
-    if (_todoList.value.todos[index] == null) {
+  const resume = async (index: number) => {
+    const resumingTodo = _todoList.value.todos[index];
+    if (resumingTodo == null) {
       throw new Error('index error');
     }
 
-    _todoList.value.todos[index].finishedAt = undefined;
+    await todoListGateway.resume(
+      _todoList.value.todoListId,
+      resumingTodo.todoId
+    );
+
+    resumingTodo.finishedAt = undefined;
   };
 
-  const changeTitle = (index: number, title: string) => {
-    if (_todoList.value.todos[index] == null) {
+  const changeTitle = async (index: number, title: string) => {
+    const changingTitleTodo = _todoList.value.todos[index];
+    if (changingTitleTodo == null) {
       throw new Error('index error');
     }
+
+    await todoListGateway.changeTitle(
+      _todoList.value.todoListId,
+      changingTitleTodo.todoId,
+      title
+    );
 
     _todoList.value.todos[index].title = title;
   };
@@ -72,10 +109,17 @@ export const useTodoList = (
     return _todoList.value.todos[index].title;
   };
 
-  const changeNote = (index: number, note: string) => {
-    if (_todoList.value.todos[index] == null) {
+  const changeNote = async (index: number, note: string) => {
+    const changingNoteTodo = _todoList.value.todos[index];
+    if (changingNoteTodo == null) {
       throw new Error('index error');
     }
+
+    await todoListGateway.changeNote(
+      _todoList.value.todoListId,
+      changingNoteTodo.todoId,
+      note
+    );
     _todoList.value.todos[index].note = note;
   };
 
@@ -87,7 +131,16 @@ export const useTodoList = (
     return _todoList.value.todos[index].note;
   };
 
+  const todos = computed(() => _todoList.value.todos);
   const length = computed(() => _todoList.value.todos.length);
+  const name = computed(() => _todoList.value.name);
+
+  const load = async (todoListId: string) => {
+    isLoading.value = true;
+    const todoList: TodoList = await $fetch('/api/todo-lists/' + todoListId);
+    _todoList.value = todoList;
+    isLoading.value = false;
+  };
 
   return {
     createNewTodo,
@@ -97,9 +150,12 @@ export const useTodoList = (
     changeTitle,
     changeNote,
     length,
-    todos: _todoList.value.todos,
+    todos,
+    name,
     isFinished,
     getNote,
     getTitle,
+    load,
+    isLoading,
   };
 };

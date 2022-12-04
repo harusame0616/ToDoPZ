@@ -4,42 +4,74 @@ import { useTodoList } from '@/composables/useTodoList';
 
 type Props = {
   injection: Symbol;
-  selectIndex: number;
-};
-type Emits = {
-  (e: 'update:selectIndex', index: number): void;
+  selectIndex?: number;
 };
 
-const props = defineProps<Props>();
-const emits = defineEmits<Emits>();
+const props = withDefaults(defineProps<Props>(), { selectIndex: -1 });
 
 const todoList = inject<ReturnType<typeof useTodoList>>(props.injection);
-if (!todoList) {
-  throw Error('Injection Error');
+
+if (todoList == null) {
+  throw new Error('injection error');
 }
 
 const todoListItemRefs = ref<typeof DomainTodoListItem[]>([]);
-
-const selectIndex = computed(() => props.selectIndex);
+const todos = computed(() => todoList.todos);
 
 const select = (index: number) => {
-  emits('update:selectIndex', index);
+  selectIndex.value = index;
 };
 
-watchEffect(() => {
-  const selectIndex = props.selectIndex;
-  if (selectIndex < 0) {
-    return;
+const addNewTodo = async () => {
+  if (!todoList) {
+    throw new Error('didnt select todo list');
   }
 
-  todoListItemRefs.value[selectIndex]?.focusTitle();
-});
+  todoList.createNewTodo();
+
+  await new Promise((r) =>
+    setTimeout(() => {
+      if (!todoList) {
+        return;
+      }
+
+      selectIndex.value = todoList.length.value - 1;
+      r(true);
+    }, 50)
+  );
+};
+
+const selectIndex = ref(props.selectIndex);
 </script>
 
 <template>
   <div>
+    <div>
+      <input
+        type="text"
+        :value="todoList.name.value"
+        class="py-2 px-4 w-full"
+        readonly
+      />
+    </div>
+    <button
+      @click="addNewTodo()"
+      class="
+        border-2
+        shadow-md
+        px-4
+        py-2
+        rounded-md
+        m-2
+        active:bg-gray-200
+        transition-all
+      "
+    >
+      追加
+    </button>
+
     <div
-      v-for="(_, index) of todoList.todos"
+      v-for="(todo, index) in todos.value"
       class="transition-all duration-400"
       :class="{ 'p-4': selectIndex == index }"
     >
@@ -47,7 +79,7 @@ watchEffect(() => {
         ref="todoListItemRefs"
         :injection="props.injection"
         :index="index"
-        :expand="selectIndex == index"
+        :expand="selectIndex === index"
         @click="select(index)"
         :class="{ 'shadow-lg': selectIndex == index }"
       />
